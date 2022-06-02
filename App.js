@@ -24,7 +24,8 @@ const icons = {
 };
 
 export default function App() {
-  const [city, setCity] = useState("Loading...");
+  const [city, setCity] = useState();
+  const [cur, setCur] = useState();
   const [days, setDays] = useState([]);
   const [ok, setOk] = useState(true);
   const getWeather = async () => {
@@ -44,6 +45,7 @@ export default function App() {
       `https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude=alert&appid=${API_KEY}&units=metric`
     );
     const json = await response.json();
+    setCur(json.current);
     setDays(json.daily);
   };
   useEffect(() => {
@@ -52,98 +54,136 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <View style={styles.city}>
-        <Text style={styles.cityName}>{city}</Text>
-      </View>
-      <ScrollView
-        pagingEnabled
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.weather}
-      >
-        {days.length === 0 ? (
-          <View style={{ ...styles.day, alignItems: "center" }}>
-            <ActivityIndicator
-              color="white"
-              style={{ marginTop: 10 }}
-              size="large"
-            />
+      {days.length === 0 ? (
+        <View style={styles.loading}>
+          <ActivityIndicator
+            color="white"
+            style={{ marginTop: 10, flex: 1 }}
+            size="large"
+          />
+        </View>
+      ) : (
+        <ScrollView style={styles.mainContainer}>
+          <View style={styles.current}>
+            <Text style={styles.cityName}>{city}</Text>
+            <Text style={styles.curTemp}>
+              {`${parseFloat(cur.temp).toFixed(1)}°`}
+            </Text>
+            <Text style={styles.curMain}>{cur.weather[0].main}</Text>
+            <Text style={styles.curTempMinMax}>
+              Max {`${parseFloat(days[0].temp.max).toFixed(1)}°`} Min{" "}
+              {`${parseFloat(days[0].temp.min).toFixed(1)}°`}
+            </Text>
           </View>
-        ) : (
-          days.map((day, index) => (
-            <View key={index} style={styles.day}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  width: "100%",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={styles.temp}>
-                  {parseFloat(day.temp.day).toFixed(1)}
-                </Text>
-                <Fontisto
-                  name={icons[day.weather[0].main]}
-                  size={68}
-                  color="white"
-                />
-              </View>
-              <Text style={styles.description}>{day.weather[0].main}</Text>
-              <Text style={styles.tinyText}>{day.weather[0].description}</Text>
-              <Text style={styles.time}>
-                {new Date(day.dt * 1000).toString().substring(0, 10)}
-              </Text>
+
+          <View style={{ marginTop: 40, width: SCREEN_WIDTH, padding: 20 }}>
+            <View style={styles.weeks}>
+              {days.map((day, index) => (
+                <View key={index} style={styles.day}>
+                  {index === 0 ? (
+                    <Text style={styles.time}>Today</Text>
+                  ) : (
+                    <Text style={styles.time}>
+                      {new Date(day.dt * 1000).toString().substring(0, 3)}
+                    </Text>
+                  )}
+                  <View style={styles.dayInfo}>
+                    <Text style={styles.temp}>
+                      {`${parseFloat(day.temp.day).toFixed(1)}°`}
+                    </Text>
+                    <View style={styles.icon}>
+                      <Fontisto
+                        name={icons[day.weather[0].main]}
+                        size={20}
+                        color="white"
+                      />
+                    </View>
+                    <Text style={styles.description}>
+                      {day.weather[0].description}
+                    </Text>
+                  </View>
+                </View>
+              ))}
             </View>
-          ))
-        )}
-      </ScrollView>
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    alignItems: "center",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f1c40f",
   },
-  city: {
-    flex: 1.2,
+  mainContainer: {
+    alignItems: "center",
+  },
+  current: {
+    marginTop: 70,
     justifyContent: "center",
     alignItems: "center",
   },
   cityName: {
-    fontSize: 58,
-    fontWeight: "500",
+    fontSize: 45,
+    fontWeight: "300",
     color: "white",
   },
-  weather: {},
-  day: {
-    width: SCREEN_WIDTH,
-    alignItems: "flex-start",
-    paddingHorizontal: 20,
-  },
-  temp: {
-    marginTop: 50,
+  curTemp: {
     fontSize: 100,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "white",
   },
-  description: {
-    marginTop: -10,
-    fontSize: 30,
-    fontWeight: "500",
+  curMain: {
+    fontSize: 20,
+    fontWeight: "200",
     color: "white",
   },
-  tinyText: {
-    marginTop: -5,
-    fontSize: 25,
-    fontWeight: "500",
+  curTempMinMax: {
+    fontSize: 20,
+    fontWeight: "200",
     color: "white",
+  },
+  weeks: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+    borderRadius: 15,
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  day: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
   },
   time: {
-    fontSize: 20,
-    fontWeight: "500",
+    fontSize: 25,
     color: "white",
+    flex: 1,
+  },
+  dayInfo: {
+    flex: 3,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  temp: {
+    fontSize: 20,
+    color: "white",
+    flex: 1.2,
+    textAlign: "center",
+  },
+  icon: {
+    flex: 1,
+  },
+  description: {
+    fontSize: 20,
+    color: "white",
+    flex: 2,
+    textAlign: "end",
   },
 });
